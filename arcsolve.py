@@ -4,7 +4,7 @@ domain = {}
 def solve(num_vars, num_constraints, constraints):
     for x_i in range(num_vars):
         domain[x_i] = range(num_vars)
-    PQ queue
+    PQ queue # MRV
     while not queue.isEmpty():
         x_i, x_j = queue.pop():
         if prune(x_i, x_j):

@@ -47,6 +47,11 @@ def create_constraints(cs):
 
 def check_constraints(order):
     # check iteratively if wizard satisfies constraints
-    for wizard in order:
+    for i in range(len(order)):
+        wizard = order[i]
+        loc = curr_order[wizard]
+        errors = 0
         for c in list(constraints[wizard].keys()):
-            # check to see if wizard satsifies constraints starting w each key
+            # check to see if wizard fails constraints starting w each key
+            if i <
+        curr_errors[i] = errors
