@@ -8,25 +8,33 @@ Create a way to store constraints, names
 Create quick way to check constraints
 Create heuristic of constraints
 Create graph structure?
-Jimmy is dumb and stupid
-Messenger bag
 '''
-
+from scipy import optimize
 order_slots = []
-curr_order = {}
 curr_errors = []
+curr_order = {}
 constraints = {}
 
 # solve: takes in number of variables, constraints, and list of constraints
 # returns: approximate ordering
-def solve(num_vars, num_constraints, constraints):
-    order_slots = range(num_vars)
+def solve(num_vars, cs):
+    global order_slots
+    order_slots = [0] * num_vars
+    global curr_errors
+    curr_errors = [0] * num_vars
+    print(len(curr_errors))
     # create initial ordering
+    create_constraints(cs)
     wizards = list(constraints.keys())
     for i in range(num_vars):
         order_slots[i] = wizards[i]
         curr_order[wizards[i]] = i
-    # iteratively remove worst wizard, backtrack at bottom?
+
+    # check for errors, put num of errors in list in order
+    check_constraints(order_slots)
+    # exchange worst + random amount based on heat coefficient
+    ret = optimize.anneal(check_constraints, curr_order, schedule='boltzmann', full_output=True, maxiter=500, lower=-10, upper=10, dwell=250, disp=True)
+    return ret
 
 
 # creates constraints - puts constraints into constraints dictionary
@@ -35,9 +43,9 @@ def solve(num_vars, num_constraints, constraints):
 def create_constraints(cs):
     for c in cs:
         # if there's something already for the wizard, access it
-        if constraints[c[0]]:
+        if c[0] in constraints:
             # if there's already something for the 1st wizard constraint, add
-            if constraints[c[0]][c[1]]:
+            if c[1] in constraints[c[0]]:
                 constraints[c[0]][c[1]].append(c[2])
             # create new array of 2nd wizards for 1st wizards
             else:
@@ -47,11 +55,14 @@ def create_constraints(cs):
 
 def check_constraints(order):
     # check iteratively if wizard satisfies constraints
-    for i in range(len(order)):
+    print(len(curr_errors))
+    for i in list(range(len(order))):
         wizard = order[i]
-        loc = curr_order[wizard]
         errors = 0
         for c in list(constraints[wizard].keys()):
-            # check to see if wizard fails constraints starting w each key
-            if i <
+            for other_wiz in constraints[wizard][c]:
+                # check to see if wizard fails constraints starting w each key
+                if (i < curr_order[c] and i > curr_order[other_wiz]) or (i > curr_order[c] and i < curr_order[other_wiz]):
+                    errors += 1
         curr_errors[i] = errors
+    return sum(curr_errors)
