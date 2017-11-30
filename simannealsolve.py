@@ -1,98 +1,80 @@
 '''
 Uses simulated annealing to solve this. For realsies this time.
-
 Credit to: https://github.com/perrygeo/simanneal
-
-TODO:
-Bring over constraint generation from appoptimization
-Call from parsing
-Anneal parameters
-Create a move function - in this case, some sort of swap/permute
-Create an objective function/energy - number of incorrect constraints
-Create a more efficient way to check constraints - remove duplicates
 '''
-
+import simannealsolve
+import sys
 from simanneal import Annealer
 import math
-from random import shuffle
-
-order_slots = []
-curr_errors = []
-# number:wizard
-wizard_dict = {}
-# wizard:number
-dict_wizard = {}
-constraints = {}
-# wizard number:location
-curr_loc = {}
+import random
 
 class WizardConstraints(Annealer):
-    # Test annealer with CS170 WizardConstraints project
+    def __init__(self, state, num_vars, constraints):
+        self.num_vars = num_vars
+        self.curr_errors = [0] * num_vars
+        self.constraints = constraints
+        super(WizardConstraints, self).__init__(state)
 
-    # creates a new random permutation of the list
-    # exchange pairwise randomly, or by worst + random?
-    # currently: worst + random
     def move(self):
-
+        # random swaps now xd
+        a = random.randint(0, self.num_vars - 1)
+        b = random.randint(0, self.num_vars - 1)
+        self.state[a], self.state[b] = self.state[b], self.state[a]
 
     # objective function - minimize total sum of errors
     def energy(self):
-        global curr_loc
-        for i in range(len(order)):
-            curr_loc[i] = i
-        for i in range(len(order)):
-            wizard = order[i]
-            errors = 0
-            if wizard_dict[wizard] in constraints:
-                for c in list(constraints[wizard_dict[wizard]].keys()):
-                    for other_wiz in constraints[wizard_dict[wizard]][c]:
-                        # check to see if wizard fails constraints
-                        if (i < curr_loc[dict_wizard[c]]
-                         and i > curr_loc[dict_wizard[other_wiz]]) or (i > curr_loc[dict_wizard[c]]
-                         and i < curr_loc[dict_wizard[other_wiz]]):
-                            errors += 1
-            curr_errors[i] = errors
-        return sum(curr_errors)
+        # current location of each wizard
+        curr_loc = {}
+        for i in range(len(self.state)):
+            curr_loc[self.state[i]] = i
+        # iterate through constraints, checking each
+        errors = 0
+        for c in self.constraints:
+            w1, w2, w3 = c[0], c[1], c[2]
+            # check if w3 out of w1, w2 range
+            if (curr_loc[w3] > curr_loc[w1] and \
+                curr_loc[w3] < curr_loc[w2]):
+                errors += 1
+            elif (curr_loc[w3] < curr_loc[w1] and \
+                curr_loc[w3] > curr_loc[w2]):
+                errors += 1
+        return errors
 
 def get_wizards(num_vars, cs):
-    wizards = 0
+    wizards = set()
     for c in cs:
-        if c[0] not in dict_wizard:
-            dict_wizard[c[0]] = wizards
-            wizards += 1
-            if wizards >= num_vars:
-                break
-        if c[1] not in dict_wizard:
-            dict_wizard[c[1]] = wizards
-            wizards += 1
-            if wizards >= num_vars:
-                break
-        if c[2] not in dict_wizard:
-            dict_wizard[c[2]] = wizards
-            wizards += 1
-            if wizards >= num_vars:
-                break
-
-def create_constraints(cs):
-    for c in cs:
-        # if there's something already for the wizard, access it
-        if c[2] in constraints:
-            # if there's already something for the 1st wizard constraint, add
-            if c[0] not in constraints[c[2]]:
-                constraints[c[2]][c[0]] = [c[1]]
-            # create new array of 2nd wizards for 1st wizards
-            else:
-                constraints[c[2]][c[0]].append(c[1])
-        else:
-            constraints[c[2]] = {c[0]:[c[1]]}
+        wizards.add(c[0])
+        wizards.add(c[1])
+        wizards.add(c[2])
+    return list(wizards)
 
 def solve(num_vars, constraints):
-    create_constraints(constraints)
-    initial_state = get_wizards(num_vars, constraints)
-    wizard_solver = WizardConstraints(initial_state)
-    auto_schedule = wizard_solver.auto(minutes=1,steps=1000000)
+    init_state = get_wizards(num_vars, constraints)
+    wizard_solver = WizardConstraints(init_state, num_vars, constraints)
+    auto_schedule = wizard_solver.auto(minutes=1,steps=100000)
     wizard_solver.set_schedule(auto_schedule)
     wizard_solver.copy_strategy = "slice"
     state, x = wizard_solver.anneal()
     print(wizard_solver.energy())
-    return state
+    return [wizard_dict[s] for s in state]
+
+'''
+Parse the input file, call the methods and return the result.
+'''
+
+def parse(input_file):
+    inputs = open(input_file, "r")
+    result = open("output.in", "w")
+
+    input_list = inputs.readlines()
+    num_vars = int(input_list[0])
+    num_constraints = int(input_list[1])
+    input_list = [line.split() for line in input_list[2:]]
+
+    inputs.close()
+    for s in simannealsolve.solve(num_vars, input_list):
+        result.write("%s\n" % s)
+    result.close()
+
+if __name__ == '__main__':
+    parse(sys.argv[1])
