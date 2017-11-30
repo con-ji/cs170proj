@@ -1,6 +1,10 @@
 '''
 Uses simulated annealing to solve this. For realsies this time.
-Credit to: https://github.com/perrygeo/simanneal
+Simulated Annealing Python Library: https://github.com/perrygeo/simanneal
+
+TODO:
+input20_3.in
+input35_4.in
 '''
 import simannealsolve
 import sys
@@ -17,9 +21,8 @@ class WizardConstraints(Annealer):
 
     def move(self):
         # random swaps now xd
-        a = random.randint(0, self.num_vars - 1)
-        b = random.randint(0, self.num_vars - 1)
-        self.state[a], self.state[b] = self.state[b], self.state[a]
+        swaps = random.sample(range(self.num_vars), 2)
+        self.state[swaps[0]], self.state[swaps[1]] = self.state[swaps[1]], self.state[swaps[0]]
 
     # objective function - minimize total sum of errors
     def energy(self):
@@ -51,7 +54,7 @@ def get_wizards(num_vars, cs):
 def solve(num_vars, constraints):
     init_state = get_wizards(num_vars, constraints)
     wizard_solver = WizardConstraints(init_state, num_vars, constraints)
-    auto_schedule = wizard_solver.auto(minutes=1,steps=2000)
+    auto_schedule = wizard_solver.auto(minutes=15,steps=150000)
     wizard_solver.set_schedule(auto_schedule)
     wizard_solver.copy_strategy = "slice"
     state, x = wizard_solver.anneal()
@@ -64,7 +67,7 @@ Parse the input file, call the methods and return the result.
 
 def parse(input_file):
     inputs = open(input_file, "r")
-    result = open("output20_0.in", "w")
+    result = open("output" + str(input_file[-7:-3]) + ".in", "w")
 
     input_list = inputs.readlines()
     inputs.close()
