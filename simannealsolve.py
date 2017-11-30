@@ -51,12 +51,12 @@ def get_wizards(num_vars, cs):
 def solve(num_vars, constraints):
     init_state = get_wizards(num_vars, constraints)
     wizard_solver = WizardConstraints(init_state, num_vars, constraints)
-    auto_schedule = wizard_solver.auto(minutes=1,steps=100000)
+    auto_schedule = wizard_solver.auto(minutes=1,steps=2000)
     wizard_solver.set_schedule(auto_schedule)
     wizard_solver.copy_strategy = "slice"
     state, x = wizard_solver.anneal()
     print(wizard_solver.energy())
-    return [wizard_dict[s] for s in state]
+    return state
 
 '''
 Parse the input file, call the methods and return the result.
@@ -64,16 +64,16 @@ Parse the input file, call the methods and return the result.
 
 def parse(input_file):
     inputs = open(input_file, "r")
-    result = open("output.in", "w")
+    result = open("output20_0.in", "w")
 
     input_list = inputs.readlines()
+    inputs.close()
     num_vars = int(input_list[0])
     num_constraints = int(input_list[1])
     input_list = [line.split() for line in input_list[2:]]
 
-    inputs.close()
     for s in simannealsolve.solve(num_vars, input_list):
-        result.write("%s\n" % s)
+        result.write(s + " ")
     result.close()
 
 if __name__ == '__main__':
