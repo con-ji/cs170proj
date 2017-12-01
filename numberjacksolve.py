@@ -1,14 +1,26 @@
 from Numberjack import *
 
+wizard_dict = {}
+
 def model_wizards(wizards, constraints):
-    order = VarArray(wizards)
-    indices = {wizards[i]:i for i in range(len(wizards))}
+    # each item is mapped to a domain of possible values: each wizard -> slot
+    # one variable for each wizard, domain of possible values for each
+    # order = VarArray(len(wizards), range(len(wizards)), 'w')
+    # must compare current location of each wizard and compare against the other
+    # each item in order: w_ and its locations
+    global wizard_dict
+    order = VarArray(0)
+    for w in wizards:
+        # make new variable for each wizard
+        v = Variable(range(len(wizards)), w)
+        wizard_dict[w] = v
+        order.append(v)
     model = Model(
             AllDiff(order),
-            [(order[indices[c[2]]] > order[indices[c[0]]] and \
-            order[indices[c[2]]] > order[indices[c[1]]]) or \
-            (order[indices[c[2]]] < order[indices[c[0]]] and \
-            order[indices[c[2]]] < order[indices[c[1]]]) \
+            [(wizard_dict[c[2]].get_value() > wizard_dict[c[0]].get_value() and \
+            wizard_dict[c[2]].get_value() > wizard_dict[c[1]].get_value()) or \
+            (wizard_dict[c[2]].get_value() < wizard_dict[c[0]].get_value() and \
+            wizard_dict[c[2]].get_value() < wizard_dict[c[1]].get_value()) \
             for c in constraints]
     )
     return (order, model)
@@ -17,7 +29,7 @@ def solve_wizards(param):
     (order, model) = model_wizards(param['wizards'], param['constraints'])
     solver = model.load(param['solver'])
     solver.solve()
-    return solver.get_solution()
+    return [str(Expression.get_value(i)) for i in order]
 
 def get_wizards(cs):
     wizards = set()
@@ -25,7 +37,8 @@ def get_wizards(cs):
         wizards.add(c[0])
         wizards.add(c[1])
         wizards.add(c[2])
-    return list(wizards)
+    wizards = list(wizards)
+    return wizards
 
 '''
 Parse the input file, call the methods and return the result.
